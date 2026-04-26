@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Wave — Ride the Markets. Master the Waves.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================
+   RESET & VARIABLES
+   ============================ */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg:        #04080f;
+  --bg2:       #07111e;
+  --bg3:       #0b1a2c;
+  --surface:   #0f2236;
+  --border:    #1a3550;
+  --cyan:      #00c8f0;
+  --cyan-dim:  #006a80;
+  --gold:      #f5c542;
+  --gold-dim:  #7a6020;
+  --red:       #ff4560;
+  --green:     #00e676;
+  --text:      #d6eaf8;
+  --text-dim:  #6a9bb5;
+  --white:     #ffffff;
+  --font-hd:   'Barlow Condensed', sans-serif;
+  --font-bd:   'Outfit', sans-serif;
+  --ticker-h:  46px;
+  --nav-h:     64px;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-bd);
+  font-size: 16px;
+  line-height: 1.65;
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+
+/* noise overlay */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:998;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  opacity:.35;
+}
+
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--cyan-dim); border-radius:3px; }
+
+/* ============================
+   TICKER BANNER
+   ============================ */
+/* ============================
+   TICKER BANNER
+   ============================ */
+#ticker-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 200;
+  height: var(--ticker-h);
+  background: #020b14;
+  border-bottom: 1px solid rgba(0,200,240,0.15);
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.ticker-label {
+  flex-shrink: 0;
+  padding: 0 16px;
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-hd);
+  font-size: 12px; font-weight: 900;
+  letter-spacing: 2px; text-transform: uppercase;
+  white-space: nowrap;
+  z-index: 2;
+  transition: background .4s, color .4s;
+}
+.ticker-dot {
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.15} }
+
+.ticker-label.market-open  { background: var(--cyan); color: var(--bg); }
+.ticker-label.market-open  .ticker-dot { background: var(--bg); animation: blink 1.4s infinite; }
+.ticker-label.market-closed{ background: #111e2e; color: #5a8aa8; border-right: 1px solid #1a3550; }
+.ticker-label.market-closed .ticker-dot { background: #5a8aa8; opacity: .45; }
+
+/* scrolling track */
+.ticker-wrap  { flex: 1; overflow: hidden; display: flex; align-items: center; }
+.ticker-track {
+  display: flex; white-space: nowrap;
+  animation: tickerMove 52s linear infinite;
+  will-change: transform;
+}
+.ticker-track:hover { animation-play-state: paused; }
+@keyframes tickerMove {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.t-copy { display: inline-flex; }
+
+.t-item {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 0 26px; height: var(--ticker-h);
+  border-right: 1px solid rgba(0,200,240,0.08);
+  cursor: default; transition: background .2s;
+}
+.t-item:hover { background: rgba(0,200,240,0.05); }
+
+.t-sym   { font-family: var(--font-hd); font-size: 14px; font-weight: 800; color: var(--white); letter-spacing: .5px; }
+.t-price { font-size: 13px; font-weight: 600; color: var(--text); }
+.t-dots  { color: var(--text-dim); letter-spacing: 3px; font-size: 11px; }
+.t-chg   { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 3px; }
+.t-chg.up   { color: var(--green); }
+.t-chg.down { color: var(--red); }
+
+/* ============================
+   NAV
+   ============================ */
+nav {
+  position: fixed;
+  top: var(--ticker-h);
+  left: 0; right: 0;
+  z-index: 100;
+  height: var(--nav-h);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 40px;
+  background: rgba(4,8,15,0.9);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(0,200,240,0.07);
+}
+
+.nav-logo {
+  font-family: var(--font-hd);
+  font-size: 26px; font-weight: 900;
+  letter-spacing: 2px; color: var(--white);
+  text-transform: uppercase;
+}
+.nav-logo span { color: var(--cyan); }
+
+.nav-links { display: flex; gap: 8px; align-items: center; }
+
+.nav-links a {
+  font-size: 14px; font-weight: 500; letter-spacing: 0.3px;
+  color: var(--text-dim);
+  padding: 8px 14px; border-radius: 6px;
+  transition: color 0.2s, background 0.2s;
+}
+.nav-links a:hover { color: var(--white); background: rgba(255,255,255,0.05); }
+
+.btn-nav {
+  background: var(--cyan) !important;
+  color: var(--bg) !important;
+  font-weight: 700 !important;
+  border-radius: 6px !important;
+}
+.btn-nav:hover { background: #1ad5f8 !important; }
+
+/* ============================
+   HERO
+   ============================ */
+#hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  /* offset for ticker + nav */
+  padding: calc(var(--ticker-h) + var(--nav-h) + 60px) 24px 100px;
+  overflow: hidden;
+}
+
+.hero-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,200,240,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,200,240,0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 100%, transparent 30%, black);
+}
+
+.hero-glow {
+  position: absolute; top: 25%; left: 50%; transform: translateX(-50%);
+  width: 700px; height: 350px;
+  background: radial-gradient(ellipse, rgba(0,200,240,0.11) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+canvas#waveCanvas {
+  position: absolute; bottom: 0; left: 0;
+  width: 100%; height: 50%; opacity: .22;
+}
+
+.hero-content { position: relative; z-index: 2; max-width: 900px; }
+
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(0,200,240,0.08);
+  border: 1px solid rgba(0,200,240,0.22);
+  border-radius: 100px;
+  padding: 6px 18px;
+  font-size: 11px; font-weight: 700; letter-spacing: 2.5px;
+  color: var(--cyan); text-transform: uppercase;
+  margin-bottom: 28px;
+  animation: fadeUp .5s ease both;
+}
+.hero-badge-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--cyan);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(1.5)} }
+
+.hero-title {
+  font-family: var(--font-hd);
+  font-size: clamp(64px, 10vw, 120px);
+  font-weight: 900; line-height: .88;
+  letter-spacing: -1px; text-transform: uppercase;
+  color: var(--white);
+  animation: fadeUp .5s .1s ease both;
+}
+.hero-title .wave-word { color: var(--cyan); display: block; }
+
+.hero-sub {
+  font-size: 18px; font-weight: 300;
+  color: var(--text-dim); max-width: 580px;
+  margin: 26px auto 0;
+  animation: fadeUp .5s .2s ease both;
+}
+
+.hero-actions {
+  display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+  margin-top: 44px;
+  animation: fadeUp .5s .3s ease both;
+}
+
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--cyan); color: var(--bg);
+  font-family: var(--font-hd); font-size: 18px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  padding: 16px 36px; border-radius: 8px; border: none; cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+  box-shadow: 0 0 28px rgba(0,200,240,.28);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 50px rgba(0,200,240,.5); }
+
+.btn-secondary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: transparent; color: var(--text);
+  font-family: var(--font-hd); font-size: 18px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  padding: 15px 36px; border-radius: 8px;
+  border: 1px solid var(--border); cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.btn-secondary:hover { border-color: var(--cyan); color: var(--cyan); }
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 60px;
+  margin-top: 64px; padding-top: 40px;
+  border-top: 1px solid var(--border);
+  animation: fadeUp .5s .4s ease both;
+}
+.stat-item { text-align: center; }
+.stat-num {
+  font-family: var(--font-hd); font-size: 42px; font-weight: 900;
+  color: var(--cyan); line-height: 1;
+}
+.stat-label { font-size: 12px; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; margin-top: 4px; }
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ============================
+   SHARED SECTION STYLES
+   ============================ */
+section { padding: 100px 24px; }
+.section-inner { max-width: 1200px; margin: 0 auto; }
+
+.section-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--cyan); margin-bottom: 14px;
+}
+.section-title {
+  font-family: var(--font-hd); font-size: clamp(36px,5vw,62px);
+  font-weight: 900; text-transform: uppercase; line-height: .95;
+  color: var(--white); margin-bottom: 18px;
+}
+.section-desc { font-size: 16px; color: var(--text-dim); max-width: 560px; }
+
+.reveal {
+  opacity:0; transform:translateY(22px);
+  transition: opacity .6s ease, transform .6s ease;
+}
+.reveal.visible { opacity:1; transform:translateY(0); }
+
+/* ============================
+   HOW IT WORKS — SIMPLIFIED
+   ============================ */
+#how { background: var(--bg2); }
+
+.path-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  margin-top: 56px;
+}
+
+.path-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 44px 40px;
+  position: relative; overflow: hidden;
+  transition: border-color .2s, transform .2s;
+}
+.path-card:hover { transform: translateY(-4px); }
+.path-card.path-free { border-color: rgba(0,200,240,.2); }
+.path-card.path-free:hover { border-color: var(--cyan); }
+.path-card.path-paid { border-color: rgba(245,197,66,.2); }
+.path-card.path-paid:hover { border-color: var(--gold); }
+
+.path-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+}
+.path-free::before { background: linear-gradient(90deg, var(--cyan), transparent); }
+.path-paid::before { background: linear-gradient(90deg, var(--gold), transparent); }
+
+.path-tag {
+  display: inline-flex; align-items: center;
+  border-radius: 4px; padding: 4px 12px;
+  font-size: 10px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase;
+  margin-bottom: 20px;
+}
+.path-free .path-tag { background: rgba(0,200,240,.1); border: 1px solid rgba(0,200,240,.25); color: var(--cyan); }
+.path-paid .path-tag { background: rgba(245,197,66,.1); border: 1px solid rgba(245,197,66,.25); color: var(--gold); }
+
+.path-title {
+  font-family: var(--font-hd); font-size: 36px; font-weight: 900;
+  text-transform: uppercase; color: var(--white); margin-bottom: 6px; line-height: 1;
+}
+.path-subtitle { font-size: 14px; color: var(--text-dim); margin-bottom: 32px; }
+
+.path-steps { list-style: none; margin-bottom: 36px; }
+.path-steps li {
+  display: flex; gap: 16px; align-items: flex-start;
+  padding: 16px 0; border-bottom: 1px solid var(--border);
+  font-size: 15px;
+}
+.path-steps li:last-child { border-bottom: none; }
+
+.ps-num {
+  flex-shrink: 0;
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-hd); font-size: 16px; font-weight: 900;
+  margin-top: 1px;
+}
+.path-free .ps-num { background: rgba(0,200,240,.12); color: var(--cyan); }
+.path-paid .ps-num { background: rgba(245,197,66,.12); color: var(--gold); }
+
+.ps-text strong { color: var(--white); display: block; margin-bottom: 3px; font-size: 15px; }
+.ps-text span   { font-size: 13px; color: var(--text-dim); }
+
+.bot-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(0,200,240,.08); border: 1px solid rgba(0,200,240,.18);
+  border-radius: 100px; padding: 3px 10px;
+  font-size: 11px; font-weight: 700; color: var(--cyan); letter-spacing: .5px;
+}
+
+.btn-free {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #5865F2; color: white;
+  font-family: var(--font-hd); font-size: 18px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  padding: 16px 32px; border-radius: 8px; border: none; cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+}
+.btn-free:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(88,101,242,.4); }
+
+.btn-paid {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--gold); color: var(--bg);
+  font-family: var(--font-hd); font-size: 18px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  padding: 16px 32px; border-radius: 8px; border: none; cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+}
+.btn-paid:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(245,197,66,.35); }
+
+/* Auto-collect info callout */
+.auto-collect-note {
+  margin-top: 28px;
+  padding: 16px 20px;
+  background: rgba(0,200,240,.05);
+  border: 1px solid rgba(0,200,240,.14);
+  border-radius: 10px;
+  font-size: 13px; color: var(--text-dim);
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.auto-collect-note strong { color: var(--cyan); }
+
+/* ============================
+   WHAT WE OFFER
+   ============================ */
+#offer { background: var(--bg); }
+
+.offer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px,1fr));
+  gap: 2px; background: var(--border);
+  border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+  margin-top: 56px;
+}
+.offer-card {
+  background: var(--bg); padding: 36px 30px;
+  transition: background .2s;
+}
+.offer-card:hover { background: var(--bg2); }
+.offer-icon { font-size: 34px; margin-bottom: 18px; display: block; }
+.offer-tier {
+  font-size: 10px; font-weight: 700; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px;
+}
+.offer-name {
+  font-family: var(--font-hd); font-size: 26px; font-weight: 900;
+  text-transform: uppercase; line-height: 1;
+  color: var(--white); margin-bottom: 18px;
+}
+.offer-name.cyan { color: var(--cyan); }
+.offer-name.gold { color: var(--gold); }
+
+.offer-features { list-style: none; }
+.offer-features li {
+  font-size: 14px; color: var(--text-dim);
+  padding: 7px 0; border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; gap: 9px;
+}
+.offer-features li:last-child { border-bottom: none; }
+.offer-features li::before { content: '—'; color: var(--cyan); flex-shrink: 0; }
+.offer-cta {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 22px; font-size: 13px; font-weight: 600;
+  color: var(--cyan); border-bottom: 1px solid transparent;
+  transition: border-color .2s; cursor: pointer;
+}
+.offer-cta:hover { border-color: var(--cyan); }
+.offer-cta.gold { color: var(--gold); }
+.offer-cta.gold:hover { border-color: var(--gold); }
+
+/* ============================
+   FOR WHO
+   ============================ */
+#who { background: var(--bg2); }
+
+.who-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(290px,1fr));
+  gap: 22px; margin-top: 56px;
+}
+.who-card {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 12px; padding: 34px 30px;
+  transition: border-color .2s, transform .2s;
+}
+.who-card:hover { border-color: var(--cyan); transform: translateY(-4px); }
+.who-title {
+  font-family: var(--font-hd); font-size: 23px; font-weight: 900;
+  text-transform: uppercase; color: var(--white);
+  margin-bottom: 18px; display: flex; align-items: center; gap: 10px;
+}
+.who-title span { font-size: 24px; }
+.who-list { list-style: none; }
+.who-list li {
+  font-size: 14px; color: var(--text-dim);
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+  display: flex; gap: 10px;
+}
+.who-list li:last-child { border-bottom: none; }
+.who-list li::before { content: '→'; color: var(--cyan); flex-shrink: 0; }
+
+.who-footer {
+  margin-top: 44px; padding: 28px 36px;
+  background: linear-gradient(135deg, rgba(0,200,240,.07), rgba(0,200,240,.02));
+  border: 1px solid rgba(0,200,240,.18); border-radius: 12px;
+  font-size: 17px; color: var(--text);
+}
+.who-footer strong { color: var(--cyan); }
+
+/* ============================
+   MENTORS
+   ============================ */
+#mentors { background: var(--bg); }
+
+.mentors-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(380px,1fr));
+  gap: 28px; margin-top: 56px;
+}
+.mentor-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 16px; padding: 46px 40px;
+  position: relative; overflow: hidden;
+}
+.mentor-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  background: linear-gradient(90deg, var(--cyan), transparent);
+}
+.mentor-tag {
+  display: inline-flex; align-items: center;
+  background: rgba(0,200,240,.1); border: 1px solid rgba(0,200,240,.2);
+  border-radius: 4px; padding: 4px 12px;
+  font-size: 10px; font-weight: 700; letter-spacing: 2px;
+  color: var(--cyan); text-transform: uppercase; margin-bottom: 18px;
+}
+.mentor-name {
+  font-family: var(--font-hd); font-size: 44px; font-weight: 900;
+  text-transform: uppercase; color: var(--white); line-height: 1; margin-bottom: 6px;
+}
+.mentor-exp { font-size: 13px; color: var(--text-dim); margin-bottom: 22px; letter-spacing: .5px; }
+.mentor-bio { font-size: 15px; color: var(--text-dim); margin-bottom: 22px; }
+.mentor-quote {
+  border-left: 3px solid var(--cyan); padding-left: 18px;
+  font-size: 14px; font-style: italic; color: var(--text);
+}
+
+/* ============================
+   PRICING
+   ============================ */
+#pricing { background: var(--bg2); }
+
+.pricing-toggle {
+  display: inline-flex; align-items: center;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 100px; padding: 4px;
+  margin-top: 32px; margin-bottom: 52px;
+}
+.toggle-option {
+  padding: 10px 28px; border-radius: 100px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  color: var(--text-dim); transition: all .2s;
+  border: none; background: transparent;
+}
+.toggle-option.active { background: var(--cyan); color: var(--bg); }
+.save-badge {
+  display: inline-block; background: var(--gold); color: var(--bg);
+  font-size: 10px; font-weight: 800;
+  padding: 2px 8px; border-radius: 100px;
+  margin-left: 8px; letter-spacing: 1px; text-transform: uppercase;
+}
+.save-pill {
+  display: inline-block; background: rgba(0,230,118,0.15);
+  border: 1px solid rgba(0,230,118,0.35);
+  color: var(--green);
+  font-size: 11px; font-weight: 700;
+  padding: 1px 8px; border-radius: 100px;
+  margin-left: 6px; letter-spacing: 0.5px;
+}
+
+.pricing-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px,1fr));
+  gap: 22px;
+}
+
+.pricing-card {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 16px; padding: 38px 34px;
+  position: relative; transition: transform .2s, border-color .2s;
+}
+.pricing-card:hover { transform: translateY(-6px); }
+.pricing-card.featured { border-color: var(--gold); background: linear-gradient(145deg, var(--bg), #110f04); }
+.pricing-card.featured::after {
+  content: '👑 BEST VALUE';
+  position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+  background: var(--gold); color: var(--bg);
+  font-family: var(--font-hd); font-size: 11px; font-weight: 900;
+  letter-spacing: 2px; padding: 4px 16px; border-radius: 100px;
+}
+
+.plan-name {
+  font-family: var(--font-hd); font-size: 28px; font-weight: 900;
+  text-transform: uppercase; color: var(--white); margin-bottom: 4px;
+}
+.plan-tagline { font-size: 13px; color: var(--text-dim); margin-bottom: 26px; }
+
+.plan-price-monthly {}
+.plan-price-yearly { display: none; }
+
+.plan-price {
+  font-family: var(--font-hd); font-size: 54px; font-weight: 900;
+  color: var(--cyan); line-height: 1;
+}
+.plan-price.gold-price { color: var(--gold); }
+.plan-period { font-size: 13px; color: var(--text-dim); margin-top: 4px; margin-bottom: 26px; }
+
+.plan-features { list-style: none; margin-bottom: 30px; }
+.plan-features li {
+  font-size: 14px; color: var(--text);
+  padding: 9px 0; border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.plan-features li:last-child { border-bottom: none; }
+.plan-features li .ck { color: var(--cyan); flex-shrink: 0; }
+.plan-features li .ck.gold { color: var(--gold); }
+
+.btn-plan {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 15px;
+  font-family: var(--font-hd); font-size: 17px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  border-radius: 8px; border: none; cursor: pointer; transition: all .2s;
+}
+.btn-plan-cyan { background: var(--cyan); color: var(--bg); }
+.btn-plan-cyan:hover { box-shadow: 0 0 28px rgba(0,200,240,.4); transform: translateY(-2px); }
+.btn-plan-gold { background: var(--gold); color: var(--bg); }
+.btn-plan-gold:hover { box-shadow: 0 0 28px rgba(245,197,66,.4); transform: translateY(-2px); }
+.btn-plan-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.btn-plan-outline:hover { border-color: var(--cyan); color: var(--cyan); }
+
+.no-refund-note {
+  margin-top: 32px; padding: 18px 24px;
+  background: rgba(255,69,96,.06); border: 1px solid rgba(255,69,96,.2);
+  border-radius: 8px; font-size: 13px; color: var(--text-dim); text-align: center;
+}
+.no-refund-note strong { color: var(--red); }
+
+/* ============================
+   TESTIMONIALS
+   ============================ */
+#results { background: var(--bg); }
+
+.testi-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr));
+  gap: 18px; margin-top: 52px;
+}
+.testi-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 26px 22px;
+  transition: border-color .2s;
+}
+.testi-card:hover { border-color: var(--cyan-dim); }
+.testi-profit {
+  font-family: var(--font-hd); font-size: 36px; font-weight: 900;
+  color: var(--cyan); margin-bottom: 4px;
+}
+.testi-timeframe { font-size: 12px; color: var(--text-dim); letter-spacing: 1px; margin-bottom: 14px; }
+.testi-text { font-size: 14px; color: var(--text-dim); line-height: 1.6; margin-bottom: 18px; }
+.testi-author { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: var(--text); }
+.testi-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--surface); display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+}
+
+/* ============================
+   MANAGE MEMBERSHIP
+   ============================ */
+#manage { background: var(--bg2); }
+
+.manage-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 24px; margin-top: 52px;
+}
+.manage-card {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 12px; padding: 34px 30px;
+  transition: border-color .2s;
+}
+.manage-card:hover { border-color: var(--cyan); }
+.manage-card h3 {
+  font-family: var(--font-hd); font-size: 22px; font-weight: 900;
+  text-transform: uppercase; color: var(--white); margin-bottom: 10px;
+}
+.manage-card p { font-size: 14px; color: var(--text-dim); margin-bottom: 22px; }
+.btn-manage {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: transparent; color: var(--cyan);
+  font-family: var(--font-hd); font-size: 15px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  padding: 11px 22px; border-radius: 8px;
+  border: 1px solid var(--cyan); cursor: pointer; transition: all .2s;
+}
+.btn-manage:hover { background: var(--cyan); color: var(--bg); }
+
+/* ============================
+   DISCLAIMER
+   ============================ */
+#disclaimer { background: var(--bg); }
+
+.no-refund-banner {
+  margin-top: 36px; margin-bottom: 32px;
+  padding: 24px 32px;
+  background: linear-gradient(135deg, rgba(255,69,96,.12), rgba(255,69,96,.04));
+  border: 1px solid rgba(255,69,96,.28); border-radius: 12px;
+  display: flex; align-items: flex-start; gap: 18px;
+}
+.no-refund-icon { font-size: 30px; flex-shrink: 0; }
+.no-refund-text h4 {
+  font-family: var(--font-hd); font-size: 22px; font-weight: 900;
+  text-transform: uppercase; color: var(--red); margin-bottom: 7px;
+}
+.no-refund-text p { font-size: 14px; color: var(--text-dim); }
+
+.disclaimer-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(330px,1fr));
+  gap: 2px; background: var(--border);
+  border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+}
+.disclaimer-item { background: var(--bg2); padding: 30px 28px; }
+.disclaimer-item h4 {
+  font-family: var(--font-hd); font-size: 17px; font-weight: 800;
+  text-transform: uppercase; color: var(--white);
+  margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+}
+.disclaimer-item p,
+.disclaimer-item ul { font-size: 13px; color: var(--text-dim); line-height: 1.75; }
+.disclaimer-item ul { padding-left: 14px; }
+
+/* ============================
+   FOOTER
+   ============================ */
+footer {
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: 60px 24px 36px;
+}
+.footer-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr auto; gap: 40px; align-items: start;
+}
+.footer-brand .nav-logo { font-size: 30px; margin-bottom: 12px; }
+.footer-brand p { font-size: 14px; color: var(--text-dim); max-width: 340px; }
+.socials { display: flex; gap: 10px; margin-top: 18px; }
+.social-btn {
+  width: 38px; height: 38px; border-radius: 8px;
+  background: var(--surface); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; cursor: pointer; transition: border-color .2s, transform .15s;
+}
+.social-btn:hover { border-color: var(--cyan); transform: translateY(-2px); }
+.footer-links { display: flex; flex-direction: column; gap: 10px; }
+.footer-link-group { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.footer-link { font-size: 13px; color: var(--text-dim); transition: color .2s; }
+.footer-link:hover { color: var(--cyan); }
+.footer-bottom {
+  max-width: 1200px; margin: 36px auto 0;
+  padding-top: 22px; border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 12px; color: var(--text-dim); flex-wrap: wrap; gap: 8px;
+}
+
+/* ============================
+   RESPONSIVE
+   ============================ */
+@media (max-width: 768px) {
+  nav { padding: 0 18px; }
+  section { padding: 64px 20px; }
+  .path-grid { grid-template-columns: 1fr; }
+  .manage-grid { grid-template-columns: 1fr; }
+  .footer-inner { grid-template-columns: 1fr; }
+  .hero-stats { gap: 28px; }
+  .nav-links .hm { display: none; }
+  .mentors-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ========================
+     TICKER BANNER
+     ======================== -->
+<div id="ticker-bar">
+  <div class="ticker-label market-open" id="tickerLabel">
+    <div class="ticker-dot" id="tickerDot"></div>
+    <span id="tickerLabelText">LIVE MARKETS</span>
+  </div>
+  <div class="ticker-wrap">
+    <div class="ticker-track" id="tickerTrack">
+      <!-- JS builds content immediately -->
+    </div>
+  </div>
+</div>
+
+<!-- ========================
+     NAV
+     ======================== -->
+<nav>
+  <div class="nav-logo">Market<span>Wave</span></div>
+  <div class="nav-links">
+    <a href="#offer" class="hm">What We Offer</a>
+    <a href="#pricing" class="hm">Pricing</a>
+    <a href="#mentors" class="hm">Mentors</a>
+    <a href="#how" class="btn-nav">Join The Wave</a>
+  </div>
+</nav>
+
+<!-- ========================
+     HERO
+     ======================== -->
+<section id="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <canvas id="waveCanvas"></canvas>
+  <div class="hero-content">
+    <div class="hero-badge"><div class="hero-badge-dot"></div>Stock &amp; Options Trading Community</div>
+    <h1 class="hero-title">
+      <span>Market</span>
+      <span class="wave-word">Wave</span>
+    </h1>
+    <p class="hero-sub">Ride the Markets. Master the Waves. Your all-in-one trading community — built for education, real-time alerts, and transformation at every level.</p>
+    <div class="hero-actions">
+      <a href="https://discord.gg/vPXks54y3N" class="btn-primary">🎮 Join Free Community</a>
+      <a href="#pricing" class="btn-secondary">View Premium Plans →</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-item"><div class="stat-num">15+</div><div class="stat-label">Yrs Combined Experience</div></div>
+      <div class="stat-item"><div class="stat-num">3</div><div class="stat-label">Premium Plan Tiers</div></div>
+      <div class="stat-item"><div class="stat-num">24/7</div><div class="stat-label">Community Access</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================
+     HOW IT WORKS — SIMPLIFIED
+     ======================== -->
+<section id="how">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-label">Get Started</div>
+      <h2 class="section-title">Two Ways In. Zero Confusion.</h2>
+      <p class="section-desc">Whether you want free access or a premium subscription — just pick your path. The bot handles everything automatically.</p>
+    </div>
+
+    <div class="path-grid">
+
+      <!-- FREE PATH -->
+      <div class="path-card path-free reveal">
+        <div class="path-tag">Free Access</div>
+        <div class="path-title">Join the Community</div>
+        <div class="path-subtitle">Daily levels, watchlists &amp; market insights — no cost, no card.</div>
+        <ul class="path-steps">
+          <li>
+            <div class="ps-num">1</div>
+            <div class="ps-text">
+              <strong>Click "Join Free Community"</strong>
+              <span>Opens the MarketWave Discord invite. Accept it to enter the server.</span>
+            </div>
+          </li>
+          <li>
+            <div class="ps-num">2</div>
+            <div class="ps-text">
+              <strong>Bot assigns your Free role instantly <span class="bot-pill">🤖 Auto</span></strong>
+              <span>As soon as you join, the bot gives you the <em>Free Member</em> role. Free channels unlock immediately.</span>
+            </div>
+          </li>
+          <li>
+            <div class="ps-num">3</div>
+            <div class="ps-text">
+              <strong>Start exploring — upgrade anytime</strong>
+              <span>Come back to choose a paid plan whenever you're ready. Your Discord account links automatically.</span>
+            </div>
+          </li>
+        </ul>
+        <a href="https://discord.gg/vPXks54y3N" class="btn-free">🎮 Join Free Community</a>
+      </div>
+
+      <!-- PAID PATH -->
+      <div class="path-card path-paid reveal">
+        <div class="path-tag">Premium Access</div>
+        <div class="path-title">Start Membership</div>
+        <div class="path-subtitle">Real-time alerts, trade plans, mentorship &amp; more.</div>
+        <ul class="path-steps">
+          <li>
+            <div class="ps-num">1</div>
+            <div class="ps-text">
+              <strong>Pick your plan below</strong>
+              <span>Choose 5K Challenge, MarketWave Plus, or Elite — monthly or yearly.</span>
+            </div>
+          </li>
+          <li>
+            <div class="ps-num">2</div>
+            <div class="ps-text">
+              <strong>Log in with Discord <span class="bot-pill">🔐 OAuth</span></strong>
+              <span>Clicking the plan button opens a Discord login. This links your Discord account — no manual Discord ID entry needed.</span>
+            </div>
+          </li>
+          <li>
+            <div class="ps-num">3</div>
+            <div class="ps-text">
+              <strong>Complete payment via Stripe</strong>
+              <span>Your name, email &amp; phone are collected securely by Stripe during checkout — no separate form needed.</span>
+            </div>
+          </li>
+          <li>
+            <div class="ps-num">4</div>
+            <div class="ps-text">
+              <strong>Bot assigns both roles instantly <span class="bot-pill">🤖 Auto</span></strong>
+              <span>You receive the <em>Free Member</em> role + your paid membership role automatically. Channels unlock immediately.</span>
+            </div>
+          </li>
+        </ul>
+        <a href="#pricing" class="btn-paid">View Premium Plans 👑</a>
+        <div class="auto-collect-note">
+          <span>🔒</span>
+          <span><strong>Your info is collected automatically.</strong> Name, email &amp; phone come from Stripe. Discord ID comes from the OAuth login. You never need to fill in a separate form.</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ========================
+     WHAT WE OFFER
+     ======================== -->
+<section id="offer">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-label">Membership Tiers</div>
+      <h2 class="section-title">What We Offer</h2>
+      <p class="section-desc">From free community access to elite mentorship — a seat at the wave for every level of trader.</p>
+    </div>
+    <div class="offer-grid reveal">
+      <div class="offer-card">
+        <span class="offer-icon">🌊</span>
+        <div class="offer-tier">Free Tier</div>
+        <div class="offer-name">Free Community</div>
+        <ul class="offer-features">
+          <li>Earnings Calendar</li>
+          <li>Economic Calendar</li>
+          <li>Daily Market Insights</li>
+          <li>Community Q&amp;A access</li>
+        </ul>
+        <a href="https://discord.gg/vPXks54y3N" class="offer-cta">Join Free →</a>
+      </div>
+      <div class="offer-card">
+        <span class="offer-icon">📈</span>
+        <div class="offer-tier">Paid Tier 1</div>
+        <div class="offer-name cyan">5K to 50K Challenge</div>
+        <ul class="offer-features">
+          <li>Small-account compounding strategies</li>
+          <li>Guided growth plan</li>
+          <li>Exclusive challenge group</li>
+          <li>Weekly setups &amp; reviews</li>
+        </ul>
+        <a href="#pricing" class="offer-cta">See Plans →</a>
+      </div>
+      <div class="offer-card">
+        <span class="offer-icon">🚀</span>
+        <div class="offer-tier">Paid Tier 2</div>
+        <div class="offer-name cyan">MarketWave Plus</div>
+        <ul class="offer-features">
+          <li>Daily trade plans</li>
+          <li>Real-time trade alerts</li>
+          <li>Live chart support &amp; analysis</li>
+          <li>Premium daily market insights</li>
+        </ul>
+        <a href="#pricing" class="offer-cta">See Plans →</a>
+      </div>
+      <div class="offer-card">
+        <span class="offer-icon">👑</span>
+        <div class="offer-tier">Paid Tier 3 — Best Value</div>
+        <div class="offer-name gold">MarketWave Elite</div>
+        <ul class="offer-features">
+          <li>Everything in MarketWave Plus</li>
+          <li>Everything in 5K Challenge</li>
+          <li>Short &amp; long-term edge strategies</li>
+          <li>Priority mentorship access</li>
+        </ul>
+        <a href="#pricing" class="offer-cta gold">See Plans →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================
+     WHO IS IT FOR
+     ======================== -->
+<section id="who">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-label">Our Community</div>
+      <h2 class="section-title">Who Is Market Wave For?</h2>
+      <p class="section-desc">Every trading style has a home here. Not sure where you fit? We'll help you find your edge.</p>
+    </div>
+    <div class="who-grid">
+      <div class="who-card reveal">
+        <div class="who-title"><span>📊</span> Swing Traders</div>
+        <ul class="who-list">
+          <li>9–5 Professionals who plan trades around a full-time job</li>
+          <li>Beginners who need structured, guided trade ideas</li>
+          <li>Small account builders growing with controlled risk</li>
+        </ul>
+      </div>
+      <div class="who-card reveal">
+        <div class="who-title"><span>⚡</span> Day Traders</div>
+        <ul class="who-list">
+          <li>Options day traders who need real-time alerts &amp; tight risk control</li>
+          <li>Full-time traders who need precision, live levels &amp; community momentum</li>
+        </ul>
+      </div>
+      <div class="who-card reveal">
+        <div class="who-title"><span>🏦</span> Long-Term Investors</div>
+        <ul class="who-list">
+          <li>Entrepreneurs &amp; business owners deploying capital with conviction</li>
+          <li>Value-focused traders seeking macro &amp; fundamental strategy</li>
+        </ul>
+      </div>
+    </div>
+    <div class="who-footer reveal">
+      <strong>Not sure where you fit?</strong> You'll find your edge here — or we'll help you build it. Start free and upgrade anytime.
+    </div>
+  </div>
+</section>
+
+<!-- ========================
+     MENTORS
+     ======================== -->
+<section id="mentors">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-label">Expert Guidance</div>
+      <h2 class="section-title">Meet Your Mentors</h2>
+      <p class="section-desc">15+ years of combined options trading knowledge brought directly to your Discord server.</p>
+    </div>
+    <div class="mentors-grid">
+      <div class="mentor-card reveal">
+        <div class="mentor-tag">Lead Mentor</div>
+        <div class="mentor-name">Wave Master</div>
+        <div class="mentor-exp">7 Years Options Trading Experience</div>
+        <p class="mentor-bio">Known for sharp market insights and a disciplined approach, Wave Master specializes in high-probability setups and risk management. His passion lies in helping others avoid common pitfalls and build lasting trading success.</p>
+        <div class="mentor-quote">"Trading is about patience, discipline, and learning from every wave the market throws your way."</div>
+      </div>
+      <div class="mentor-card reveal">
+        <div class="mentor-tag">Senior Mentor</div>
+        <div class="mentor-name">Ocean Navigator</div>
+        <div class="mentor-exp">8+ Years Options Trading Experience</div>
+        <p class="mentor-bio">With over eight years navigating the turbulent seas of the options market, Ocean Navigator brings a wealth of expertise and a calm, strategic mindset. Renowned for clear explanations and actionable trade ideas.</p>
+        <div class="mentor-quote">"The market is an ocean — let me help you chart your course to consistent wins."</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================
+     PRICING
+     ======================== -->
+<section id="pricing">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-label">Subscription Plans</div>
+      <h2 class="section-title">Choose Your Wave</h2>
+      <p class="section-desc">Flexible monthly and yearly plans. Cancel anytime — access stays active until your billing cycle ends.</p>
+    </div>
+
+    <div class="pricing-toggle reveal">
+      <button class="toggle-option active" onclick="togglePricing(this,'monthly')">Monthly</button>
+      <button class="toggle-option" onclick="togglePricing(this,'yearly')">Yearly <span class="save-badge">Save 20%</span></button>
+    </div>
+
+    <div class="pricing-grid">
+      <!-- 5K -->
+      <div class="pricing-card reveal">
+        <div class="plan-name">5K to 50K Challenge</div>
+        <div class="plan-tagline">Small account, big ambition. Grow with guided compounding.</div>
+        <div class="plan-price-monthly">
+          <div class="plan-price">$49</div>
+          <div class="plan-period">per month · billed monthly</div>
+        </div>
+        <div class="plan-price-yearly">
+          <div class="plan-price">$530</div>
+          <div class="plan-period">per year · just $44/mo <span class="save-pill">save $58</span></div>
+        </div>
+        <ul class="plan-features">
+          <li><span class="ck">✓</span> Small-account compounding strategies</li>
+          <li><span class="ck">✓</span> Guided step-by-step growth plan</li>
+          <li><span class="ck">✓</span> Exclusive 5K Challenge group channel</li>
+          <li><span class="ck">✓</span> Weekly setups &amp; recap reviews</li>
+          <li><span class="ck">✓</span> Community support &amp; accountability</li>
+        </ul>
+        <a href="https://marketwave-bot.onrender.com/login?plan=5K%20to%2050K%20Challenge&interval=monthly" id="btn-5k" class="btn-plan btn-plan-outline">
+          Start the Challenge 📈
+        </a>
+      </div>
+      <!-- PLUS -->
+      <div class="pricing-card reveal">
+        <div class="plan-name">MarketWave Plus</div>
+        <div class="plan-tagline">Real-time alerts, daily trade plans &amp; chart support.</div>
+        <div class="plan-price-monthly">
+          <div class="plan-price">$69</div>
+          <div class="plan-period">per month · billed monthly</div>
+        </div>
+        <div class="plan-price-yearly">
+          <div class="plan-price">$745</div>
+          <div class="plan-period">per year · just $62/mo <span class="save-pill">save $83</span></div>
+        </div>
+        <ul class="plan-features">
+          <li><span class="ck">✓</span> Daily trade plans (stocks &amp; options)</li>
+          <li><span class="ck">✓</span> Real-time trade alerts</li>
+          <li><span class="ck">✓</span> Live chart support &amp; analysis</li>
+          <li><span class="ck">✓</span> Premium daily market insights</li>
+          <li><span class="ck">✓</span> Exclusive Plus member channel</li>
+        </ul>
+        <a href="https://marketwave-bot.onrender.com/login?plan=MarketWave%20Plus&interval=monthly" id="btn-plus" class="btn-plan btn-plan-cyan">
+          Upgrade to Plus 🚀
+        </a>
+      </div>
+      <!-- ELITE -->
+      <div class="pricing-card featured reveal">
+        <div class="plan-name">MarketWave Elite</div>
+        <div class="plan-tagline">The full package — Plus AND the 5K Challenge combined.</div>
+        <div class="plan-price-monthly">
+          <div class="plan-price gold-price">$99</div>
+          <div class="plan-period">per month · billed monthly</div>
+        </div>
+        <div class="plan-price-yearly">
+          <div class="plan-price gold-price">$1,070</div>
+          <div class="plan-period">per year · just $89/mo <span class="save-pill">save $118</span></div>
+        </div>
+        <ul class="plan-features">
+          <li><span class="ck gold">✓</span> Everything in MarketWave Plus</li>
+          <li><span class="ck gold">✓</span> Everything in 5K Challenge</li>
+          <li><span class="ck gold">✓</span> Short &amp; long-term market edge</li>
+          <li><span class="ck gold">✓</span> Priority mentorship access</li>
+          <li><span class="ck gold">✓</span> Elite-only exclusive channel</li>
+          <li><span class="ck gold">✓</span> Best value for serious traders</li>
+        </ul>
+        <a href="https://marketwave-bot.onrender.com/login?plan=MarketWave%20Elite&interval=monthly" id="btn-elite" class="btn-plan btn-plan-gold">
+          Unlock Elite 👑
+        </a>
+      </div>
+    </div>
+
+    <div class="no-refund-note reveal">
+      <strong>⚠️ NO REFUND POLICY:</strong> All subscriptions are non-refundable once processed. Access remains active until your billing cycle ends after cancellation. By paying, you accept this policy.
+    </div>
+  </div>
+</section>
+
+<!-- ========================
+     REAL RESULTS
+     ======================== -->
+<section id="results">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-label">Member Wins</div>
+      <h2 class="section-title">Real Results</h2>
+      <p class="section-desc">From first-timers to those scaling into five-figure profits — every milestone from members who took the leap.</p>
+    </div>
+    <div class="testi-grid">
+      <div class="testi-card reveal">
+        <div class="testi-profit">+$2,400</div>
+        <div class="testi-timeframe">Single Week · SPX Options</div>
+        <div class="testi-text">"The daily levels and real-time alerts changed everything. I stopped guessing and started executing with confidence."</div>
+        <div class="testi-author"><div class="testi-avatar">🏄</div> MarketWave Plus Member</div>
+      </div>
+      <div class="testi-card reveal">
+        <div class="testi-profit">5K → 18K</div>
+        <div class="testi-timeframe">3 Months · 5K Challenge</div>
+        <div class="testi-text">"The compounding strategy in the challenge is no joke. Followed the plan, trusted the process, and my account tripled."</div>
+        <div class="testi-author"><div class="testi-avatar">📈</div> Challenge Member</div>
+      </div>
+      <div class="testi-card reveal">
+        <div class="testi-profit">+$8,700</div>
+        <div class="testi-timeframe">One Month · Elite</div>
+        <div class="testi-text">"Being in Elite means I get both long-term setups AND the daily fire. The mentors are the real deal — total transparency."</div>
+        <div class="testi-author"><div class="testi-avatar">👑</div> Elite Member</div>
+      </div>
+      <div class="testi-card reveal">
+        <div class="testi-profit">First Win</div>
+        <div class="testi-timeframe">Week 2 · Free → Plus Upgrade</div>
+        <div class="testi-text">"I started free, grabbed the levels, made my first profitable trade in week two, and immediately upgraded to Plus."</div>
+        <div class="testi-author"><div class="testi-avatar">🌊</div> New Member</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================
+     MANAGE MEMBERSHIP
+     ======================== -->
+<section id="manage">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-label">Member Portal</div>
+      <h2 class="section-title">Manage Your Membership</h2>
+      <p class="section-desc">Update billing, change plans, or cancel — all through our secure portals.</p>
+    </div>
+    <div class="manage-grid">
+      <div class="manage-card reveal">
+        <h3>💳 Billing &amp; Subscription</h3>
+        <p>View invoices, update payment info, change your plan, or cancel. Access stays active until your current billing cycle ends.</p>
+        <a href="https://billing.stripe.com/p/login/8x200bbnb9pW8r21gffIs00" class="btn-manage">Open Billing Portal →</a>
+      </div>
+      <div class="manage-card reveal">
+        <h3>🎮 Discord Server</h3>
+        <p>Jump directly into the MarketWave community. Your role will be active and channels unlocked based on your current plan.</p>
+        <a href="https://discord.gg/vPXks54y3N" class="btn-manage">Open Discord →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================
+     DISCLAIMER
+     ======================== -->
+<section id="disclaimer">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-label">Legal &amp; Policies</div>
+      <h2 class="section-title">Disclaimer &amp; Terms</h2>
+      <p class="section-desc">By accessing MarketWave content or joining our Discord, you agree to the following. Please read carefully.</p>
+    </div>
+    <div class="no-refund-banner reveal">
+      <div class="no-refund-icon">🚫</div>
+      <div class="no-refund-text">
+        <h4>No Refund Policy</h4>
+        <p>All subscriptions are <strong style="color:var(--red)">strictly non-refundable</strong> once processed, unless required by applicable law. If you cancel, access remains active until the end of your current billing period. Completing a purchase constitutes acceptance of this no-refund policy.</p>
+      </div>
+    </div>
+    <div class="disclaimer-grid reveal">
+      <div class="disclaimer-item">
+        <h4>📋 Use of Services</h4>
+        <ul>
+          <li>We reserve the right to refuse or revoke access at any time</li>
+          <li>No refunds once a subscription is processed (unless required by law)</li>
+          <li>Cancellation keeps access active until billing cycle ends</li>
+          <li>If 10+ market-open days are missed in a month, your subscription will be credited or extended</li>
+        </ul>
+      </div>
+      <div class="disclaimer-item">
+        <h4>⚠️ Financial Disclaimer</h4>
+        <p>Market Wave does not offer financial or investment advice. All content is educational and informational only. Trading involves risk — past results do not guarantee future performance. We are not liable for losses from reliance on our content. Always consult a licensed financial advisor.</p>
+      </div>
+      <div class="disclaimer-item">
+        <h4>© Intellectual Property</h4>
+        <p>All materials — trade ideas, levels, alerts, templates, graphics, and education content — are copyrighted by Market Wave. © 2025 Market Wave. All Rights Reserved. No copying, reproducing, or reselling without written permission.</p>
+      </div>
+      <div class="disclaimer-item">
+        <h4>🤝 Community Conduct</h4>
+        <ul>
+          <li>Be respectful and professional in all channels</li>
+          <li>Do not promote competing services without admin approval</li>
+          <li>All trades and decisions are your own responsibility</li>
+          <li>No guarantees of profits or outcomes are made</li>
+          <li>Violations may result in removal without notice</li>
+        </ul>
+      </div>
+      <div class="disclaimer-item">
+        <h4>📊 Risk Disclosure</h4>
+        <p>Trading futures, forex, and options involves substantial risk and is not suitable for everyone. Only use capital you can afford to lose. Hypothetical or simulated results have inherent limitations and may not reflect actual trading outcomes.</p>
+      </div>
+      <div class="disclaimer-item">
+        <h4>📧 Contact</h4>
+        <p>For legal, membership, or compliance questions:</p>
+        <p style="margin-top:12px"><a href="mailto:marketwave.trading@gmail.com" style="color:var(--cyan)">marketwave.trading@gmail.com</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================
+     FOOTER
+     ======================== -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="nav-logo">Market<span style="color:var(--cyan)">Wave</span></div>
+      <p>Your all-in-one stock and options trading community. Education, alerts, and real transformation at every level.</p>
+      <div class="socials">
+        <a href="https://www.youtube.com/@MarketWave7/" class="social-btn" title="YouTube">▶</a>
+        <a href="https://x.com/MarketWave7" class="social-btn" title="X / Twitter">𝕏</a>
+        <a href="https://www.instagram.com/invites/contact/?igsh=1g8vh23hfva6p&utm_content=wezfty6" class="social-btn" title="Instagram">📷</a>
+        <a href="mailto:marketwave.trading@gmail.com" class="social-btn" title="Email">✉</a>
+      </div>
+    </div>
+    <div class="footer-links">
+      <div class="footer-link-group">
+        <a href="#offer" class="footer-link">What We Offer</a>
+        <a href="#pricing" class="footer-link">Pricing</a>
+        <a href="#mentors" class="footer-link">Mentors</a>
+        <a href="#how" class="footer-link">How to Join</a>
+      </div>
+      <div class="footer-link-group">
+        <a href="#disclaimer" class="footer-link">Disclaimer</a>
+        <a href="https://billing.stripe.com/p/login/8x200bbnb9pW8r21gffIs00" class="footer-link">Billing Portal</a>
+        <a href="https://discord.gg/vPXks54y3N" class="footer-link">Discord</a>
+        <a href="mailto:marketwave.trading@gmail.com" class="footer-link">Contact</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2025 Market Wave. All Rights Reserved. Educational content only — not financial advice.</span>
+    <span style="color:var(--red)">No refunds on subscriptions once processed.</span>
+  </div>
+</footer>
+
+<!-- ========================
+     SCRIPTS
+     ======================== -->
+<script>
+/* ============================
+   WAVE CANVAS ANIMATION
+   ============================ */
+const canvas = document.getElementById('waveCanvas');
+const ctx    = canvas.getContext('2d');
+let wt = 0;
+
+function resizeCanvas() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight * 0.5;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function drawWave() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const h = canvas.height, w = canvas.width;
+
+  for (let layer = 0; layer < 2; layer++) {
+    const yBase  = h * (0.38 + layer * 0.16);
+    const amp1   = 28 - layer * 5;
+    const amp2   = 18 - layer * 3;
+    const speed  = 1 + layer * 0.35;
+    const freq1  = 3.5 + layer * 0.5;
+    const freq2  = 2 + layer * 0.3;
+    const alpha  = layer === 0 ? 0.13 : 0.07;
+
+    ctx.beginPath();
+    ctx.moveTo(0, h);
+    for (let x = 0; x <= w; x += 3) {
+      const y = yBase
+        + Math.sin((x / w) * Math.PI * freq1 + wt * speed) * amp1
+        + Math.sin((x / w) * Math.PI * freq2 + wt * speed * 0.6 + 1.2) * amp2;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(w, h);
+    ctx.lineTo(0, h);
+    ctx.closePath();
+    ctx.fillStyle = `rgba(0, 200, 240, ${alpha})`;
+    ctx.fill();
+  }
+  wt += 0.011;
+  requestAnimationFrame(drawWave);
+}
+drawWave();
+
+/* ============================
+   PRICING TOGGLE
+   ============================ */
+const planLinks = {
+  '5k':    { monthly: 'https://marketwave-bot.onrender.com/login?plan=5K%20to%2050K%20Challenge&interval=monthly',
+              yearly:  'https://marketwave-bot.onrender.com/login?plan=5K%20to%2050K%20Challenge&interval=yearly' },
+  'plus':  { monthly: 'https://marketwave-bot.onrender.com/login?plan=MarketWave%20Plus&interval=monthly',
+              yearly:  'https://marketwave-bot.onrender.com/login?plan=MarketWave%20Plus&interval=yearly' },
+  'elite': { monthly: 'https://marketwave-bot.onrender.com/login?plan=MarketWave%20Elite&interval=monthly',
+              yearly:  'https://marketwave-bot.onrender.com/login?plan=MarketWave%20Elite&interval=yearly' }
+};
+
+function togglePricing(btn, interval) {
+  document.querySelectorAll('.toggle-option').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const showMonthly = interval === 'monthly';
+  document.querySelectorAll('.plan-price-monthly').forEach(el => el.style.display = showMonthly ? 'block' : 'none');
+  document.querySelectorAll('.plan-price-yearly').forEach(el  => el.style.display = showMonthly ? 'none' : 'block');
+
+  document.getElementById('btn-5k').href    = planLinks['5k'][interval];
+  document.getElementById('btn-plus').href  = planLinks['plus'][interval];
+  document.getElementById('btn-elite').href = planLinks['elite'][interval];
+}
+
+/* ============================
+   SCROLL REVEAL
+   ============================ */
+const revealObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+/* ============================
+   TICKER — Netlify Serverless Function
+   Calls /.netlify/functions/ticker which runs server-side
+   No CORS issues — works always, market open or closed
+   Market closed → Yahoo returns last closing price automatically
+   ============================ */
+const SYMS = ['SPY','QQQ','IWM','NVDA','TSLA','META','MSFT','AAPL','GOOGL','AMD','MU','PLTR','HOOD','COIN','MSTR'];
+
+function fmtPrice(n) {
+  if (n == null || isNaN(n)) return null;
+  return n >= 1000
+    ? n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})
+    : n.toFixed(2);
+}
+
+function buildItems(data) {
+  const list = data || SYMS.map(s => ({symbol:s, price:null, change:0, pct:0}));
+  return list.map(({symbol, price, change, pct}) => {
+    const p   = fmtPrice(price);
+    const up  = (change || 0) >= 0;
+    const priceHTML = p
+      ? `<span class="t-price">$${p}</span>`
+      : `<span class="t-price t-dots">···</span>`;
+    const chgHTML = p
+      ? `<span class="t-chg ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(pct||0).toFixed(2)}%</span>`
+      : '';
+    return `<div class="t-item"><span class="t-sym">${symbol}</span>${priceHTML}${chgHTML}</div>`;
+  }).join('');
+}
+
+function renderTrack(data) {
+  const items = buildItems(data);
+  document.getElementById('tickerTrack').innerHTML =
+    `<div class="t-copy">${items}</div><div class="t-copy">${items}</div>`;
+}
+
+// Show loading dots immediately — ticker scrolls right away
+renderTrack(null);
+
+let lastData = null;
+
+async function fetchPrices() {
+  try {
+    // Call our bot server — runs server-side, no CORS issues, works always
+    const res  = await fetch('https://marketwave-bot.onrender.com/api/ticker');
+    const data = await res.json();
+    if (data.success && data.quotes?.length) {
+      lastData = data.quotes;
+      renderTrack(data.quotes);
+      return;
+    }
+  } catch (e) {}
+
+  // Fallback — keep showing last good data if available
+  if (lastData) renderTrack(lastData);
+}
+
+fetchPrices();
+setInterval(fetchPrices, 30000);
+
+/* Market open/closed label */
+function checkMarket() {
+  const et   = new Date(new Date().toLocaleString('en-US', {timeZone:'America/New_York'}));
+  const day  = et.getDay();
+  const mins = et.getHours() * 60 + et.getMinutes();
+  const open = day >= 1 && day <= 5 && mins >= 570 && mins < 960;
+  const lbl  = document.getElementById('tickerLabel');
+  const txt  = document.getElementById('tickerLabelText');
+  lbl.className   = `ticker-label market-${open ? 'open' : 'closed'}`;
+  txt.textContent = open ? 'LIVE MARKETS' : 'MARKET CLOSED';
+}
+
+checkMarket();
+setInterval(checkMarket, 60000);
+</script>
+</body>
+</html>
